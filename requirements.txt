@@ -20,6 +20,7 @@ uvicorn==0.25.0
 pydantic==2.5.3
 python-multipart==0.0.6
 streamlit==1.29.0
+slowapi==0.1.9
 
 # Monitoring & Drift Detection
 evidently==0.4.11
