@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: loan-default-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models:ro
+      - ./logs:/app/logs
+      - ./reports:/app/reports
+      - ./data:/app/data:ro
+      - ./config:/app/config:ro
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - loan-default-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: loan-default-ui
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./models:/app/models:ro
+    environment:
+      - API_URL=http://api:8000
+      - ENVIRONMENT=production
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - loan-default-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  # Optional: Add Prometheus for monitoring
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: prometheus
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  #     - prometheus-data:/prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #   restart: unless-stopped
+  #   networks:
+  #     - loan-default-network
+
+  # Optional: Add Grafana for visualization
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: grafana
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #   volumes:
+  #     - grafana-data:/var/lib/grafana
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - prometheus
+  #   networks:
+  #     - loan-default-network
+
+networks:
+  loan-default-network:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:

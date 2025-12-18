@@ -11,8 +11,11 @@ services:
       - ./models:/app/models
       - ./config:/app/config
       - ./logs:/app/logs
+      - ./reports:/app/reports
+      - ./data:/app/data
     environment:
       - PYTHONUNBUFFERED=1
+      - ENVIRONMENT=development
     networks:
       - loan-network
 
@@ -27,6 +30,8 @@ services:
       - ./logs:/app/logs
     environment:
       - PYTHONUNBUFFERED=1
+      - API_URL=http://api:8000
+      - ENVIRONMENT=development
     depends_on:
       - api
     networks:
